@@ -1,27 +1,31 @@
-#include "quadrule.h"
+#include "quadrule/quadrule.h"
 #include <iostream>
 
 QuadratureRule::QuadratureRule(int order) {
+
+    // 3D四面体积分规则
     if (order == 1) {
         weights.resize(1);
-        points.resize(1, 2);
+        points.resize(1, 3);
         
-        weights(0) = 0.5;
-        points(0, 0) = 1.0/3.0;
-        points(0, 1) = 1.0/3.0;
+        weights(0) = 1.0/6.0;  // 四面体体积为1/6
+        points(0, 0) = 0.25;
+        points(0, 1) = 0.25;
+        points(0, 2) = 0.25;
     } else {
-        weights.resize(3);
-        points.resize(3, 2);
+        // 4点积分规则
+        weights.resize(4);
+        points.resize(4, 3);
         
-        weights << 1.0/6.0, 1.0/6.0, 1.0/6.0;
-        points << 1.0/6.0, 1.0/6.0,
-                  2.0/3.0, 1.0/6.0,
-                  1.0/6.0, 2.0/3.0;
+        double a = (5.0 - std::sqrt(5.0)) / 20.0;
+        double b = (5.0 + 3.0 * std::sqrt(5.0)) / 20.0;
         
-        if (order > 2) {
-            std::cout << "Requested order " << order 
-                      << " is not implemented. Returning order 2 quadrature." << std::endl;
-        }
+        weights.fill(1.0/24.0);
+        
+        points << a, a, a,
+                  b, a, a,
+                  a, b, a,
+                  a, a, b;
     }
 }
 

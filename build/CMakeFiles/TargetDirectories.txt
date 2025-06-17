@@ -1,0 +1,3 @@
+/Users/xlx/Documents/NCTDemo/build/CMakeFiles/main.dir
+/Users/xlx/Documents/NCTDemo/build/CMakeFiles/edit_cache.dir
+/Users/xlx/Documents/NCTDemo/build/CMakeFiles/rebuild_cache.dir

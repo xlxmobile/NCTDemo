@@ -1,90 +1,78 @@
 #include <iostream>
 #include <cmath>
-#include "grid.h"
-#include "basis.h"
-#include "quadrule.h"
-#include "problem.h"
+#include "grid/grid.h"
+#include "basis/basis.h"
+#include "quadrule/quadrule.h"
+#include "problem/problem.h"
 
-int main() {
-    // 参数设置
+void run3D() {
+    std::cout << "Running 3D simulation..." << std::endl;
+    
     double a = 1.0;
     double c = 0.2;
-    int Nx = 10, Ny = 10;
-    int N = 10;
+    int Nx = 6, Ny = 6, Nz = 6; 
+    int N = 3;
     double tau = 0.5;
-    double xlow = -1, xhigh = 1, ylow = -1, yhigh = 1;
+    double xlow = -1, xhigh = 1, ylow = -1, yhigh = 1, zlow = -1, zhigh = 1;
     
-    // 边界条件
-    auto dirichlet_locations = [](double x, double y) -> bool {
-        return (std::abs(y + 1) < 1e-6 || std::abs(y - 1) < 1e-6);
+    auto dirichlet_locations_3d = [](const Eigen::VectorXd& p) -> bool {
+        return (std::abs(p(2) + 1) < 1e-6 || std::abs(p(2) - 1) < 1e-6);
     };
     
-    auto dirichlet_values = [](double x, double y) -> double {
+    auto dirichlet_values_3d = [](const Eigen::VectorXd& p) -> double {
         return 1.0;
     };
     
-    // 创建网格
-    Grid grid_instance(xlow, xhigh, ylow, yhigh, Nx, Ny);
+    Grid grid_instance(xlow, xhigh, ylow, yhigh, zlow, zhigh, Nx, Ny, Nz);
     
-    // 创建基函数
-    Basis basis_instance;
+    Basis basis_instance(true);
     GlobalBasis global_basis(grid_instance, basis_instance);
     
-    // 创建积分规则
-    QuadratureRule quadrature_instance(2);
+    QuadratureRule quadrature_instance(2, true);
     
-    // 创建问题
     StationaryProblem prob(global_basis, quadrature_instance, 
-                          dirichlet_locations, dirichlet_values);
+                          dirichlet_locations_3d, dirichlet_values_3d);
     
-    // 设置扩散和反应系数
     prob.setDiffusion(a);
     prob.setReaction(c);
     
-    // 初始条件
-    auto initial_condition = [](double x, double y) -> double {
-        return 2 - y * y;
+    auto initial_condition_3d = [](const Eigen::VectorXd& p) -> double {
+        return 2 - p(2) * p(2);
     };
     
     Eigen::VectorXd initial_condition_vector(grid_instance.getPoints().rows());
     for (int i = 0; i < grid_instance.getPoints().rows(); ++i) {
-        double x = grid_instance.getPoints()(i, 0);
-        double y = grid_instance.getPoints()(i, 1);
-        initial_condition_vector(i) = initial_condition(x, y);
+        initial_condition_vector(i) = initial_condition_3d(grid_instance.getPoints().row(i));
     }
     
     prob.setSolution(initial_condition_vector);
     
-    // 时间步进
     for (int n = 0; n < N; ++n) {
-        // 源项
-        auto f = [n, tau](double x, double y) -> double {
+        // 3D源项
+        auto f_3d = [n, tau](const Eigen::VectorXd& p) -> double {
             return std::sin(M_PI / 2 * (n + 1) * tau);
         };
         
         prob.resetSystemVector();
         prob.resetSystemMatrix();
         
-        // 添加源项
-        prob.addSource(f);
-        
-        // 组装系统
+        prob.addSource(f_3d);
         prob.assemble();
-        
-        // 组装边界条件
-        prob.assembleBoundaryConditions(dirichlet_values);
-        
-        // 求解
+        prob.assembleBoundaryConditions(dirichlet_values_3d);
         prob.solve();
-        
-        // 显示结果
         prob.show();
-        
-        // 更新解
         prob.setSolution(prob.getSolution());
         
-        std::cout << "Time step " << n + 1 << " completed." << std::endl;
+        std::cout << "3D Time step " << n + 1 << " completed." << std::endl;
     }
+}
+
+int main() {
+    std::cout << "FEM Solver with 3D Support" << std::endl;
+    std::cout << "==============================" << std::endl;
+    
+    // 运行3D模拟
+    run3D();
     
     return 0;
 }
